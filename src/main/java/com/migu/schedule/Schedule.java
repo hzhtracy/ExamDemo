@@ -2,6 +2,7 @@ package com.migu.schedule;
 
 
 import com.migu.schedule.constants.ReturnCodeKeys;
+import com.migu.schedule.info.Node;
 import com.migu.schedule.info.Task;
 import com.migu.schedule.info.TaskInfo;
 
@@ -20,10 +21,17 @@ public class Schedule {
      */
     private Queue<Task> mQueue = new LinkedList<Task>();
 
+
+    private List<Node> mNodeList = new ArrayList<Node>();
+
+
     public int init() {
         // TODO 方法未实现
         if(mTaskInfoList != null){
            mTaskInfoList.clear();
+        }
+        if(mQueue != null){
+            mQueue.clear();
         }
         return ReturnCodeKeys.E001;
     }
@@ -42,6 +50,10 @@ public class Schedule {
         TaskInfo taskInfo = new TaskInfo();
         taskInfo.setNodeId(nodeId);
         mTaskInfoList.add(taskInfo);
+
+        Node node = new Node();
+        node.setId(nodeId);
+        mNodeList.add(node);
         return ReturnCodeKeys.E003;
     }
 
@@ -73,6 +85,15 @@ public class Schedule {
                  isRegister = true;
              }
         }
+
+        Iterator<Node> iterator = mNodeList.iterator();
+        while(iterator.hasNext()){
+            Node node = iterator.next();
+            if(node.getId() == nodeId){
+                iterator.remove();
+            }
+        }
+
         /**
          * 注销成功，返回E006:服务节点注销成功
          */
@@ -152,14 +173,89 @@ public class Schedule {
 
     public int scheduleTask(int threshold) {
         // TODO 方法未实现
-        
-        return ReturnCodeKeys.E000;
+        /**
+         * 如果调度阈值取值错误，返回E002调度阈值非法。
+         */
+        if(threshold <= 0){
+            return ReturnCodeKeys.E002;
+        }
+
+        for (Task task : mQueue) {
+            Node node = getMinmumConsumptionNode();
+            node.addTask(task);
+        }
+        if (isExeedThreshold(threshold)) {
+            return ReturnCodeKeys.E013;
+        } else {
+            return ReturnCodeKeys.E014;
+        }
     }
 
+    private Node getMinmumConsumptionNode(){
+        Node node1 = mNodeList.get(0);
+        if(node1.getmTaskList() == null || node1.getmTaskList().size() <= 1){
+            return node1;
+        }
+        for(int i=1;i<mNodeList.size();i++){
+            Node node2 = mNodeList.get(i);
+            if(node2.getConsumption() < node1.getConsumption()){
+                node1 = node2;
+            }
+        }
+        return node1;
+    }
+
+    /**
+     * 判断两两服务器的总消耗率差值是否超过阈值
+     */
+    private boolean isExeedThreshold(int threshold){
+        for(int i=0;i<mNodeList.size();i++){
+            Node node1 = mNodeList.get(i);
+            for(int j=0;j<mNodeList.size();j++){
+                Node node2 = mNodeList.get(j);
+                int t = Math.abs(node1.getConsumption() - node2.getConsumption());
+                if(t > threshold){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
     public int queryTaskStatus(List<TaskInfo> tasks) {
         // TODO 方法未实现
-        return ReturnCodeKeys.E000;
+        if(tasks == null){
+            return ReturnCodeKeys.E016;
+        }
+        for(int i=0;i<mNodeList.size();i++){
+           Node node =  mNodeList.get(i);
+            List<Task> taskList = node.getmTaskList();
+            for(int j=0;j<taskList.size();j++){
+                Task task = taskList.get(j);
+                TaskInfo taskInfo = new TaskInfo();
+                taskInfo.setNodeId(node.getId());
+                taskInfo.setTaskId(task.getId());
+                tasks.add(taskInfo);
+            }
+        }
+        /**
+         * 对tasks根据任务编号进行升序排序
+         */
+        Collections.sort(tasks, new Comparator<TaskInfo>() {
+            public int compare(TaskInfo o1, TaskInfo o2) {
+                return o1.getTaskId() - o2.getTaskId();
+            }
+        });
+        /**
+         * 排序测试
+         */
+        for(TaskInfo taskInfo:tasks){
+            System.out.println(taskInfo.getTaskId() + "");
+        }
+        for(TaskInfo taskInfo:tasks){
+            System.out.println(taskInfo.getTaskId() + "," + taskInfo.getNodeId());
+        }
+        return ReturnCodeKeys.E015;
     }
 
 }
