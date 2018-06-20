@@ -179,7 +179,6 @@ public class Schedule {
         if(threshold <= 0){
             return ReturnCodeKeys.E002;
         }
-
         for (Task task : mQueue) {
             Node node = getMinmumConsumptionNode();
             node.addTask(task);
@@ -246,15 +245,6 @@ public class Schedule {
                 return o1.getTaskId() - o2.getTaskId();
             }
         });
-        /**
-         * 排序测试
-         */
-        for(TaskInfo taskInfo:tasks){
-            System.out.println(taskInfo.getTaskId() + "");
-        }
-        for(TaskInfo taskInfo:tasks){
-            System.out.println(taskInfo.getTaskId() + "," + taskInfo.getNodeId());
-        }
         return ReturnCodeKeys.E015;
     }
 
